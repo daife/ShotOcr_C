@@ -1,0 +1,40 @@
+# 忽略所有文件
+*
+
+# 但保留以下文件和目录
+!CMakeLists.txt
+!src/
+!src/**
+!include/
+!include/**
+!.gitignore
+
+# 忽略构建目录
+cmake-build-*/
+build/
+out/
+
+# 忽略IDE相关文件
+.idea/
+.vs/
+.vscode/
+*.vcxproj*
+*.sln
+*.user
+
+# 忽略编译生成的文件
+*.exe
+*.dll
+*.lib
+*.a
+*.o
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.exp
+
+# 忽略临时文件
+*.tmp
+*.temp
+*~
