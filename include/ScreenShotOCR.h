@@ -10,6 +10,7 @@
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
 #define ID_TRAY_ABOUT 1002
+#define ID_TRAY_AUTOSTART 1003
 
 class ToastWindow {
 public:
@@ -73,6 +74,11 @@ private:
     void removeTrayIcon();
     void showContextMenu(int x, int y);
     void exitApplication();
+    
+    // 开机自启动相关方法
+    bool isAutoStartEnabled();
+    void setAutoStart(bool enable);
+    void toggleAutoStart();
     
     static ScreenShotOCR* instance;
     HHOOK keyboardHook;

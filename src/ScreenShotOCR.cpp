@@ -689,9 +689,9 @@ void ScreenShotOCR::createTrayIcon() {
     
     // 设置提示文本 - 根据编译环境选择合适的字符串类型
     #ifdef UNICODE
-        wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"截图OCR - 按 Ctrl+Shift+S 开始截图");
+        wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"ShotOcr");
     #else
-        strcpy_s(nid.szTip, sizeof(nid.szTip), "截图OCR - 按 Ctrl+Shift+S 开始截图");
+        strcpy_s(nid.szTip, sizeof(nid.szTip), "ShotOcr");
     #endif
     
     // 添加到系统托盘
@@ -745,6 +745,9 @@ LRESULT CALLBACK ScreenShotOCR::HiddenWindowProc(HWND hwnd, UINT uMsg, WPARAM wP
             case ID_TRAY_ABOUT:
                 MessageBoxW(nullptr, L"截图OCR工具\n\n快捷键: Ctrl+Shift+S\n双击托盘图标也可开始截图", L"关于", MB_OK | MB_ICONINFORMATION);
                 break;
+            case ID_TRAY_AUTOSTART:
+                ocr->toggleAutoStart();
+                break;
             }
         }
         return 0;
@@ -757,6 +760,15 @@ void ScreenShotOCR::showContextMenu(int x, int y) {
     HMENU hMenu = CreatePopupMenu();
     AppendMenuW(hMenu, MF_STRING, ID_TRAY_ABOUT, L"关于");
     AppendMenuW(hMenu, MF_SEPARATOR, 0, nullptr);
+    
+    // 添加开机自启动选项，根据当前状态显示选中状态
+    UINT flags = MF_STRING;
+    if (isAutoStartEnabled()) {
+        flags |= MF_CHECKED;
+    }
+    AppendMenuW(hMenu, flags, ID_TRAY_AUTOSTART, L"开机自启动");
+    
+    AppendMenuW(hMenu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(hMenu, MF_STRING, ID_TRAY_EXIT, L"退出");
     
     // 设置窗口为前台窗口，这样菜单才能正常显示和消失
@@ -765,6 +777,70 @@ void ScreenShotOCR::showContextMenu(int x, int y) {
     TrackPopupMenu(hMenu, TPM_RIGHTBUTTON, x, y, 0, hiddenWindow, nullptr);
     
     DestroyMenu(hMenu);
+}
+
+bool ScreenShotOCR::isAutoStartEnabled() {
+    HKEY hKey;
+    LONG result = RegOpenKeyExW(HKEY_CURRENT_USER, 
+                               L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", 
+                               0, KEY_READ, &hKey);
+    
+    if (result != ERROR_SUCCESS) {
+        return false;
+    }
+    
+    wchar_t buffer[MAX_PATH];
+    DWORD bufferSize = sizeof(buffer);
+    result = RegQueryValueExW(hKey, L"ShotOcr", nullptr, nullptr, 
+                             (LPBYTE)buffer, &bufferSize);
+    
+    RegCloseKey(hKey);
+    
+    return (result == ERROR_SUCCESS);
+}
+
+void ScreenShotOCR::setAutoStart(bool enable) {
+    HKEY hKey;
+    LONG result = RegOpenKeyExW(HKEY_CURRENT_USER, 
+                               L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", 
+                               0, KEY_SET_VALUE, &hKey);
+    
+    if (result != ERROR_SUCCESS) {
+        return;
+    }
+    
+    if (enable) {
+        // 获取当前程序的完整路径
+        wchar_t exePath[MAX_PATH];
+        GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+        
+        // 添加到注册表
+        result = RegSetValueExW(hKey, L"ShotOcr", 0, REG_SZ, 
+                               (const BYTE*)exePath, 
+                               (wcslen(exePath) + 1) * sizeof(wchar_t));
+        
+        if (result == ERROR_SUCCESS) {
+            showToast("已启用开机自启动");
+        } else {
+            showToast("设置开机自启动失败");
+        }
+    } else {
+        // 从注册表删除
+        result = RegDeleteValueW(hKey, L"ShotOcr");
+        
+        if (result == ERROR_SUCCESS) {
+            showToast("已禁用开机自启动");
+        } else {
+            showToast("取消开机自启动失败");
+        }
+    }
+    
+    RegCloseKey(hKey);
+}
+
+void ScreenShotOCR::toggleAutoStart() {
+    bool currentState = isAutoStartEnabled();
+    setAutoStart(!currentState);
 }
 
 void ScreenShotOCR::exitApplication() {

@@ -36,6 +36,7 @@ target_link_libraries(${PROJECT_NAME}
     shlwapi
     ole32
     shell32
+    advapi32
 )
 
 # 设置Windows子系统（如果不想要控制台窗口）
