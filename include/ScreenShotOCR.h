@@ -2,8 +2,14 @@
 #define SCREENSHOTOCR_H
 
 #include <windows.h>
+#include <shellapi.h>
 #include <string>
 #include <vector>
+
+// 添加托盘消息常量
+#define WM_TRAYICON (WM_USER + 1)
+#define ID_TRAY_EXIT 1001
+#define ID_TRAY_ABOUT 1002
 
 class ToastWindow {
 public:
@@ -39,8 +45,13 @@ private:
     int screenWidth, screenHeight;
     std::string apiUrl;
     
+    // 托盘相关成员
+    HWND hiddenWindow;
+    NOTIFYICONDATA nid;
+    
     static LRESULT CALLBACK OverlayWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+    static LRESULT CALLBACK HiddenWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     
     void createOverlayWindow();
     void closeOverlay();
@@ -56,6 +67,12 @@ private:
     std::vector<unsigned char> decodeBase64(const std::string& encoded);
     void saveImageToFile(const std::string& imgBase64);
     std::string unescapeJsonString(const std::string& escapedStr);
+    
+    // 托盘相关方法
+    void createTrayIcon();
+    void removeTrayIcon();
+    void showContextMenu(int x, int y);
+    void exitApplication();
     
     static ScreenShotOCR* instance;
     HHOOK keyboardHook;

@@ -40,7 +40,7 @@ std::string urlEncode(const std::string& str);
 ScreenShotOCR* ScreenShotOCR::instance = nullptr;
 
 ScreenShotOCR::ScreenShotOCR() 
-    : overlayWindow(nullptr),
+    : overlayWindow(nullptr), hiddenWindow(nullptr),
       startX(0), startY(0), endX(0), endY(0), dragging(false), windowCreated(false),
       apiUrl("https://aidemo.youdao.com/ocrapi1"), keyboardHook(nullptr) {
     
@@ -61,6 +61,9 @@ ScreenShotOCR::ScreenShotOCR()
     // 安装全局键盘钩子监听 Ctrl+Shift+S
     keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, GetModuleHandle(nullptr), 0);
     
+    // 创建托盘图标
+    createTrayIcon();
+    
     // 显示启动提示
     showToast("截图OCR已启动\n按 Ctrl+Shift+S 开始截图", 3000);
 }
@@ -69,6 +72,7 @@ ScreenShotOCR::~ScreenShotOCR() {
     if (keyboardHook) {
         UnhookWindowsHookEx(keyboardHook);
     }
+    removeTrayIcon();
     closeOverlay();
     instance = nullptr;
 }
@@ -651,6 +655,120 @@ void ScreenShotOCR::closeOverlay() {
     if (overlayWindow) {
         PostMessage(overlayWindow, WM_CLOSE, 0, 0);
     }
+}
+
+void ScreenShotOCR::createTrayIcon() {
+    // 创建隐藏窗口用于处理托盘消息
+    WNDCLASSEX wc = {};
+    wc.cbSize = sizeof(WNDCLASSEX);
+    wc.lpfnWndProc = HiddenWindowProc;
+    wc.hInstance = GetModuleHandle(nullptr);
+    wc.lpszClassName = "ScreenShotOCRHidden";
+    
+    RegisterClassEx(&wc);
+    
+    hiddenWindow = CreateWindowEx(
+        0,
+        "ScreenShotOCRHidden",
+        "ScreenShotOCR Hidden Window",
+        0,
+        0, 0, 0, 0,
+        nullptr, nullptr, GetModuleHandle(nullptr), this
+    );
+    
+    // 初始化托盘图标
+    ZeroMemory(&nid, sizeof(NOTIFYICONDATA));
+    nid.cbSize = sizeof(NOTIFYICONDATA);
+    nid.hWnd = hiddenWindow;
+    nid.uID = 1;
+    nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+    nid.uCallbackMessage = WM_TRAYICON;
+    
+    // 使用系统默认图标（实际项目中应该使用自定义图标）
+    nid.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+    
+    // 设置提示文本 - 根据编译环境选择合适的字符串类型
+    #ifdef UNICODE
+        wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"截图OCR - 按 Ctrl+Shift+S 开始截图");
+    #else
+        strcpy_s(nid.szTip, sizeof(nid.szTip), "截图OCR - 按 Ctrl+Shift+S 开始截图");
+    #endif
+    
+    // 添加到系统托盘
+    Shell_NotifyIcon(NIM_ADD, &nid);
+}
+
+void ScreenShotOCR::removeTrayIcon() {
+    if (hiddenWindow) {
+        Shell_NotifyIcon(NIM_DELETE, &nid);
+        DestroyWindow(hiddenWindow);
+        hiddenWindow = nullptr;
+    }
+}
+
+LRESULT CALLBACK ScreenShotOCR::HiddenWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    ScreenShotOCR* ocr = nullptr;
+    
+    if (uMsg == WM_CREATE) {
+        CREATESTRUCT* cs = reinterpret_cast<CREATESTRUCT*>(lParam);
+        ocr = static_cast<ScreenShotOCR*>(cs->lpCreateParams);
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ocr));
+    } else {
+        ocr = reinterpret_cast<ScreenShotOCR*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    }
+    
+    switch (uMsg) {
+    case WM_TRAYICON:
+        if (ocr) {
+            switch (lParam) {
+            case WM_RBUTTONUP:
+                // 右键点击托盘图标显示菜单
+                {
+                    POINT pt;
+                    GetCursorPos(&pt);
+                    ocr->showContextMenu(pt.x, pt.y);
+                }
+                break;
+            case WM_LBUTTONDBLCLK:
+                // 双击托盘图标开始截图
+                ocr->startCapture();
+                break;
+            }
+        }
+        return 0;
+    case WM_COMMAND:
+        if (ocr) {
+            switch (LOWORD(wParam)) {
+            case ID_TRAY_EXIT:
+                ocr->exitApplication();
+                break;
+            case ID_TRAY_ABOUT:
+                MessageBoxW(nullptr, L"截图OCR工具\n\n快捷键: Ctrl+Shift+S\n双击托盘图标也可开始截图", L"关于", MB_OK | MB_ICONINFORMATION);
+                break;
+            }
+        }
+        return 0;
+    }
+    
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+void ScreenShotOCR::showContextMenu(int x, int y) {
+    HMENU hMenu = CreatePopupMenu();
+    AppendMenuW(hMenu, MF_STRING, ID_TRAY_ABOUT, L"关于");
+    AppendMenuW(hMenu, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(hMenu, MF_STRING, ID_TRAY_EXIT, L"退出");
+    
+    // 设置窗口为前台窗口，这样菜单才能正常显示和消失
+    SetForegroundWindow(hiddenWindow);
+    
+    TrackPopupMenu(hMenu, TPM_RIGHTBUTTON, x, y, 0, hiddenWindow, nullptr);
+    
+    DestroyMenu(hMenu);
+}
+
+void ScreenShotOCR::exitApplication() {
+    PostQuitMessage(0);
 }
 
 void ScreenShotOCR::run() {
