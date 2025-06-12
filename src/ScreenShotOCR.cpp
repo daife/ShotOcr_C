@@ -743,7 +743,7 @@ LRESULT CALLBACK ScreenShotOCR::HiddenWindowProc(HWND hwnd, UINT uMsg, WPARAM wP
                 ocr->exitApplication();
                 break;
             case ID_TRAY_ABOUT:
-                MessageBoxW(nullptr, L"截图OCR工具\n\n快捷键: Ctrl+Shift+S\n双击托盘图标也可开始截图", L"关于", MB_OK | MB_ICONINFORMATION);
+                MessageBoxW(nullptr, L"截图OCR工具\nGithub: Dypho\n快捷键: Ctrl+Shift+S\n双击托盘图标也可开始截图", L"关于", MB_OK | MB_ICONINFORMATION);
                 break;
             case ID_TRAY_AUTOSTART:
                 ocr->toggleAutoStart();
