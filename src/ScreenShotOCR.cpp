@@ -160,6 +160,10 @@ LRESULT CALLBACK ScreenShotOCR::OverlayWindowProc(HWND hwnd, UINT uMsg, WPARAM w
         if (ocr) ocr->onMouseRelease(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         return 0;
     case WM_RBUTTONDOWN:
+        if (ocr) {
+            ocr->closeOverlay();
+        }
+        return 0;
     case WM_KEYDOWN:
         if (wParam == VK_ESCAPE && ocr) {
             ocr->closeOverlay();
