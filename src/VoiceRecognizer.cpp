@@ -61,10 +61,10 @@ void VoiceRecognizer::startRecording() {
 void VoiceRecognizer::stopRecording() {
     if (!isRecording) return;
     
-    // 先设置标志，避免死锁
+    // 先设置标志，确保HotkeyManager能立即感知状态变化
+    keyListeningActive = false;
     shouldStop = true;
     isRecording = false;
-    keyListeningActive = false;
     
     // 停止录音设备
     if (hWaveIn) {
@@ -102,10 +102,10 @@ void VoiceRecognizer::stopRecording() {
 void VoiceRecognizer::cancelRecording() {
     if (!isRecording) return;
     
-    // 先设置标志，避免死锁
+    // 先设置标志，确保HotkeyManager能立即感知状态变化
+    keyListeningActive = false;
     shouldStop = true;
     isRecording = false;
-    keyListeningActive = false;
     
     // 停止录音设备
     if (hWaveIn) {

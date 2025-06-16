@@ -75,6 +75,7 @@ void ScreenCapture::createOverlayWindow() {
 
 void ScreenCapture::closeOverlay() {
     if (overlayWindow) {
+        windowCreated = false; // 先设置状态
         PostMessage(overlayWindow, WM_CLOSE, 0, 0);
     }
 }
@@ -104,10 +105,16 @@ LRESULT CALLBACK ScreenCapture::OverlayWindowProc(HWND hwnd, UINT uMsg, WPARAM w
         if (capture) capture->onMouseRelease(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         return 0;
     case WM_RBUTTONDOWN:
-        if (capture) capture->closeOverlay();
+        if (capture) {
+            capture->windowCreated = false; // 立即设置状态
+            capture->closeOverlay();
+        }
         return 0;
     case WM_KEYDOWN:
-        if (wParam == VK_ESCAPE && capture) capture->closeOverlay();
+        if (wParam == VK_ESCAPE && capture) {
+            capture->windowCreated = false; // 立即设置状态
+            capture->closeOverlay();
+        }
         return 0;
     case WM_PAINT: {
         PAINTSTRUCT ps;

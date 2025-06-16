@@ -13,13 +13,15 @@ public:
     ~ScreenCapture();
     
     void startCapture();
+    
+    // 公共访问（供HotkeyManager使用）
+    bool windowCreated;
 
 private:
     AppManager* appManager;
     HWND overlayWindow;
     int startX, startY, endX, endY;
     bool dragging;
-    bool windowCreated;
     int screenWidth, screenHeight;
     
     void createOverlayWindow();
