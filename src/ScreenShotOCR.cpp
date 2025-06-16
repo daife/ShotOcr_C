@@ -65,7 +65,7 @@ ScreenShotOCR::ScreenShotOCR()
     createTrayIcon();
     
     // 显示启动提示
-    showToast("截图OCR已启动\n按 Win+Shift+x 开始截图", 3000);
+    showToast("截图OCR已启动\n按 Ctrl+Shift+S 开始截图", 3000);
 }
 
 ScreenShotOCR::~ScreenShotOCR() {
@@ -82,8 +82,8 @@ LRESULT CALLBACK ScreenShotOCR::LowLevelKeyboardProc(int nCode, WPARAM wParam, L
         KBDLLHOOKSTRUCT* kb = (KBDLLHOOKSTRUCT*)lParam;
         
         // 检测 Ctrl+Shift+S 组合键
-        if (kb->vkCode == 'X' &&
-            (GetAsyncKeyState(VK_LWIN) & 0x8000) &&
+        if (kb->vkCode == 'S' &&
+            (GetAsyncKeyState(VK_CONTROL) & 0x8000) &&
             (GetAsyncKeyState(VK_SHIFT) & 0x8000)) {
             
             std::thread([](){ 
@@ -357,35 +357,6 @@ std::string ScreenShotOCR::captureScreenRegion(int x, int y, int width, int heig
     DeleteDC(screenDC);
     
     return encodeBase64(pngData);
-}
-
-void ScreenShotOCR::saveImageToFile(const std::string& imgBase64) {
-    try {
-        // 确保d:/tmp目录存在
-        std::string tmpDir = "d:/tmp";
-        CreateDirectoryA(tmpDir.c_str(), nullptr);
-        
-        // 生成带时间戳的文件名
-        SYSTEMTIME st;
-        GetLocalTime(&st);
-        char filename[256];
-        sprintf_s(filename, sizeof(filename), 
-                  "d:/tmp/screenshot_%04d%02d%02d_%02d%02d%02d_%03d.png",
-                  st.wYear, st.wMonth, st.wDay, 
-                  st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
-        
-        // 解码base64数据
-        std::vector<unsigned char> imageData = decodeBase64(imgBase64);
-        
-        // 写入文件
-        FILE* file = nullptr;
-        if (fopen_s(&file, filename, "wb") == 0 && file) {
-            fwrite(imageData.data(), 1, imageData.size(), file);
-            fclose(file);
-        }
-    } catch (...) {
-        OutputDebugStringA("保存图片失败");
-    }
 }
 
 std::vector<unsigned char> ScreenShotOCR::decodeBase64(const std::string& encoded) {
@@ -743,7 +714,7 @@ LRESULT CALLBACK ScreenShotOCR::HiddenWindowProc(HWND hwnd, UINT uMsg, WPARAM wP
                 ocr->exitApplication();
                 break;
             case ID_TRAY_ABOUT:
-                MessageBoxW(nullptr, L"截图OCR工具\nGithub: Dypho\n快捷键: Win+Shift+x\n双击托盘图标也可开始截图", L"关于", MB_OK | MB_ICONINFORMATION);
+                MessageBoxW(nullptr, L"截图OCR工具\nGithub: Dypho\n快捷键: Ctrl+Shift+S\n双击托盘图标也可开始截图", L"关于", MB_OK | MB_ICONINFORMATION);
                 break;
             case ID_TRAY_AUTOSTART:
                 ocr->toggleAutoStart();
