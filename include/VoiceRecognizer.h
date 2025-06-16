@@ -19,6 +19,9 @@ public:
     void stopRecording();
     void cancelRecording();
     
+    // 新增：按键事件处理接口
+    void onKeyPressed(int vkCode);
+    
     // 公共访问（供HotkeyManager使用）
     std::atomic<bool> keyListeningActive;
 
@@ -48,8 +51,10 @@ private:
     void initializeWaveFormat();
     void setupRecording();
     void cleanupRecording();
-    void recordingLoop();
     void timerLoop();
+    
+    // 移除 recordingLoop，改为事件驱动
+    // void recordingLoop();  // 删除这一行
     
     std::vector<char> createWavFile(const std::vector<char>& audioData);
     std::string sendToYoudaoAPI(const std::vector<char>& audioData);

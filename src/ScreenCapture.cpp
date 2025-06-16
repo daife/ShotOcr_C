@@ -104,18 +104,6 @@ LRESULT CALLBACK ScreenCapture::OverlayWindowProc(HWND hwnd, UINT uMsg, WPARAM w
     case WM_LBUTTONUP:
         if (capture) capture->onMouseRelease(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         return 0;
-    case WM_RBUTTONDOWN:
-        if (capture) {
-            capture->windowCreated = false; // 立即设置状态
-            capture->closeOverlay();
-        }
-        return 0;
-    case WM_KEYDOWN:
-        if (wParam == VK_ESCAPE && capture) {
-            capture->windowCreated = false; // 立即设置状态
-            capture->closeOverlay();
-        }
-        return 0;
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
@@ -461,5 +449,19 @@ void ScreenCapture::copyToClipboard(const std::string& text) {
         }
         
         CloseClipboard();
+    }
+}
+
+// 新增：按键事件处理方法
+void ScreenCapture::onKeyPressed(int vkCode) {
+    if (!windowCreated) return;
+    
+    switch (vkCode) {
+        case VK_ESCAPE:
+        case VK_RBUTTON:  // 添加对右键的处理
+            // 取消截图
+            windowCreated = false; // 立即设置状态
+            closeOverlay();
+            break;
     }
 }

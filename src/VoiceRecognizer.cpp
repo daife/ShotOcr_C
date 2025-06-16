@@ -46,10 +46,7 @@ void VoiceRecognizer::startRecording() {
         // 清空之前的录音数据
         recordedData.clear();
         
-        // 启动录音线程
-        recordingThread = std::thread(&VoiceRecognizer::recordingLoop, this);
-        
-        // 启动计时线程
+        // 只启动计时线程，不再需要按键检测线程
         timerThread = std::thread(&VoiceRecognizer::timerLoop, this);
         
     } catch (...) {
@@ -73,9 +70,6 @@ void VoiceRecognizer::stopRecording() {
     }
     
     // 等待线程结束
-    if (recordingThread.joinable()) {
-        recordingThread.join();
-    }
     if (timerThread.joinable()) {
         timerThread.join();
     }
@@ -114,9 +108,6 @@ void VoiceRecognizer::cancelRecording() {
     }
     
     // 等待线程结束
-    if (recordingThread.joinable()) {
-        recordingThread.join();
-    }
     if (timerThread.joinable()) {
         timerThread.join();
     }
@@ -171,56 +162,28 @@ void VoiceRecognizer::cleanupRecording() {
     audioBuffers.clear();
 }
 
-void VoiceRecognizer::recordingLoop() {
-    // 等待初始按键释放（Ctrl+Shift+H组合键）
-    Sleep(300);
+// 新增：按键事件处理方法
+void VoiceRecognizer::onKeyPressed(int vkCode) {
+    if (!isRecording || !keyListeningActive) return;
     
-    // 清除所有按键状态，避免启动时的按键影响
-    for (int i = 0; i < 256; i++) {
-        GetAsyncKeyState(i);
-    }
+    // 临时调试输出
+    // OutputDebugStringA(("VoiceRecognizer received key: " + std::to_string(vkCode) + "\n").c_str());
     
-    // 按键状态跟踪
-    bool prevKeyStates[256] = {false};
-    
-    while (isRecording && !shouldStop && keyListeningActive) {
-        bool currentKeyStates[256] = {false};
-        
-        // 检查所有按键状态
-        for (int i = 0; i < 256; i++) {
-            currentKeyStates[i] = (GetAsyncKeyState(i) & 0x8000) != 0;
-        }
-        
-        // 检查ESC键 - 按下时取消
-        if (currentKeyStates[VK_ESCAPE] && !prevKeyStates[VK_ESCAPE]) {
+    switch (vkCode) {
+        case VK_ESCAPE:
+        case VK_RBUTTON:
+            // 取消录音
             std::thread([this]() {
                 cancelRecording();
             }).detach();
-            return;
-        }
-        
-        // 检查右键 - 按下时取消
-        if (currentKeyStates[VK_RBUTTON] && !prevKeyStates[VK_RBUTTON]) {
-            std::thread([this]() {
-                cancelRecording();
-            }).detach();
-            return;
-        }
-        
-        // 检查空格键 - 按下时结束录音
-        if (currentKeyStates[VK_SPACE] && !prevKeyStates[VK_SPACE]) {
+            break;
+            
+        case VK_SPACE:
+            // 结束录音
             std::thread([this]() {
                 stopRecording();
             }).detach();
-            return;
-        }
-        
-        // 更新按键状态
-        for (int i = 0; i < 256; i++) {
-            prevKeyStates[i] = currentKeyStates[i];
-        }
-        
-        Sleep(30); // 减少检查频率以提高响应性
+            break;
     }
 }
 

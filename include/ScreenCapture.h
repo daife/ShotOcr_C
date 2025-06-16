@@ -14,6 +14,9 @@ public:
     
     void startCapture();
     
+    // 新增：按键事件处理接口
+    void onKeyPressed(int vkCode);
+    
     // 公共访问（供HotkeyManager使用）
     bool windowCreated;
 
