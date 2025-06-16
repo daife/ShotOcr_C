@@ -65,7 +65,7 @@ ScreenShotOCR::ScreenShotOCR()
     createTrayIcon();
     
     // 显示启动提示
-    showToast("截图OCR已启动\n按 Ctrl+Shift+S 开始截图", 3000);
+    showToast("截图OCR已启动\n按 Win+Shift+x 开始截图", 3000);
 }
 
 ScreenShotOCR::~ScreenShotOCR() {
@@ -82,8 +82,8 @@ LRESULT CALLBACK ScreenShotOCR::LowLevelKeyboardProc(int nCode, WPARAM wParam, L
         KBDLLHOOKSTRUCT* kb = (KBDLLHOOKSTRUCT*)lParam;
         
         // 检测 Ctrl+Shift+S 组合键
-        if (kb->vkCode == 'S' && 
-            (GetAsyncKeyState(VK_CONTROL) & 0x8000) && 
+        if (kb->vkCode == 'X' &&
+            (GetAsyncKeyState(VK_LWIN) & 0x8000) &&
             (GetAsyncKeyState(VK_SHIFT) & 0x8000)) {
             
             std::thread([](){ 
@@ -743,7 +743,7 @@ LRESULT CALLBACK ScreenShotOCR::HiddenWindowProc(HWND hwnd, UINT uMsg, WPARAM wP
                 ocr->exitApplication();
                 break;
             case ID_TRAY_ABOUT:
-                MessageBoxW(nullptr, L"截图OCR工具\nGithub: Dypho\n快捷键: Ctrl+Shift+S\n双击托盘图标也可开始截图", L"关于", MB_OK | MB_ICONINFORMATION);
+                MessageBoxW(nullptr, L"截图OCR工具\nGithub: Dypho\n快捷键: Win+Shift+x\n双击托盘图标也可开始截图", L"关于", MB_OK | MB_ICONINFORMATION);
                 break;
             case ID_TRAY_AUTOSTART:
                 ocr->toggleAutoStart();
