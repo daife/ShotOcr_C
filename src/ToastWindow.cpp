@@ -1,14 +1,9 @@
-#include "../include/ScreenShotOCR.h"
+#include "../include/AppManager.h" // 改为包含 AppManager.h，因为 ToastWindow 现在在那里定义
 #include "../include/StringUtils.h"
 #include <windowsx.h>
 
-ToastWindow::ToastWindow(const std::string& message, int duration) 
-    : hwnd(nullptr), message(message), duration(duration) {
-}
-
-ToastWindow::~ToastWindow() {
-    close();
-}
+// 注意：ToastWindow 的实现现在在 AppManager.cpp 中
+// 这个文件应该被删除，因为 ToastWindow 类已经在 AppManager.cpp 中完整实现
 
 void ToastWindow::createWindow() {
     WNDCLASSEX wc = {};
@@ -133,6 +128,11 @@ LRESULT CALLBACK ToastWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LP
 }
 
 void CALLBACK ToastWindow::TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
+    ToastWindow* toast = reinterpret_cast<ToastWindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    if (toast) {
+        toast->close();
+    }
+}
     ToastWindow* toast = reinterpret_cast<ToastWindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
     if (toast) {
         toast->close();

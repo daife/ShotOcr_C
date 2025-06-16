@@ -17,8 +17,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 设置源文件
 set(SOURCES
     src/main.cpp
-    src/ScreenShotOCR.cpp
-    src/ToastWindow.cpp
+    src/AppManager.cpp
+    src/HotkeyManager.cpp
+    src/ScreenCapture.cpp
+    src/VoiceRecognizer.cpp
 )
 
 # 设置头文件目录
@@ -37,6 +39,7 @@ target_link_libraries(${PROJECT_NAME}
     ole32
     shell32
     advapi32
+    winmm
 )
 
 # 设置Windows子系统（如果不想要控制台窗口）
