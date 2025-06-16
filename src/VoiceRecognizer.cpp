@@ -229,7 +229,7 @@ void VoiceRecognizer::timerLoop() {
     
     while (isRecording && !shouldStop) {
         auto elapsed = GetTickCount64() - startTime;
-        if ((elapsed >= MAX_RECORD_TIME-3) * 1000) {
+        if (elapsed >= (MAX_RECORD_TIME-3) * 1000) {
             // 使用异步方式避免死锁
             std::thread([this]() {
                 appManager->showToast("录音时间上限60s，自动结束");
