@@ -1,5 +1,7 @@
 # ShotOcr
 
+CachyOS / niri 重建版见 [Linux 使用、构建与实现说明](linux/README.md)。Windows 版本说明如下。
+
 Windows 10（1703+）/ 11 x64 原生托盘工具。C++17 + Win32，无第三方运行库，单个 EXE。
 
 ## 使用
